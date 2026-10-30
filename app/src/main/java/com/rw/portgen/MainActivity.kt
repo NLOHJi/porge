@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
                 filePathCallback = callback
                 val intent = Intent(Intent.ACTION_GET_CONTENT)
                 intent.addCategory(Intent.CATEGORY_OPENABLE)
-                intent.type = "*/*" // Allows images, pdfs, docs
+                intent.type = "*/*"
                 try {
                     startActivityForResult(Intent.createChooser(intent, "Select File"), fileChooserRequestCode)
                 } catch (e: Exception) {

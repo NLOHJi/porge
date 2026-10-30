@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'com.rw.portgen'
+    namespace 'com.rw.portfoliogen'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.rw.portgen"
+        applicationId "com.rw.portfoliogen"
         minSdk 24
         targetSdk 34
         versionCode 1
@@ -31,7 +31,12 @@ android {
 
 dependencies {
     implementation 'androidx.core:core-ktx:1.12.0'
-    implementation 'androidx.appcompat:appcompat:1.7.0'
-    // Explicitly add the missing dependency that is causing the error
+    implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.resourceinspection:resourceinspection-annotation:1.0.1'
+}
+
+configurations.all {
+    resolutionStrategy {
+        force 'androidx.resourceinspection:resourceinspection-annotation:1.0.1'
+    }
 }
