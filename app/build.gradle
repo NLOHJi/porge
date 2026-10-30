@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'com.rw.portfoliogen'
+    namespace 'com.rw.portgen'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.rw.portfoliogen"
+        applicationId "com.rw.portgen"
         minSdk 24
         targetSdk 34
         versionCode 1
