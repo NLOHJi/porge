@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <title>Portfolio Studio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- HOME SCREEN -->
+<section id="screen-home" class="screen active">
+  <div class="hero-bg"></div>
+  <header class="bar glass">
+    <h1>PORTFOLIO STUDIO</h1>
+    <button id="btn-theme" class="icon-btn">🌙</button>
+  </header>
+  <main class="pad">
+    <button id="New+" class="primary block glow" style="padding: 16px; font-size: 16px;">+ New Client</button>
+    <div id="client-list" class="client-list"></div>
+    <p id="empty-note" class="muted" style="text-align: center;">No clients yet. Tap "New Client" to start.</p>
+  </main>
+</section>
+
+<!-- EDIT SCREEN -->
+<section id="screen-edit" class="screen">
+  <div class="hero-bg"></div>
+  <header class="bar glass">
+    <button class="icon-btn" data-home>←</button>
+    <h1 id="edit-title">Edit</h1>
+    <button class="icon-btn" id="btn-save" style="color: #3b82f6; border-color: #3b82f6; font-weight: bold;">Save</button>
+  </header>
+  
+  <div class="tabs glass">
+    <button class="tab active" data-tab="form">Edit</button>
+    <button class="tab" data-tab="preview">Preview</button>
+  </div>
+  
+  <main id="tab-form" class="pad"></main>
+  <iframe id="tab-preview" class="preview-frame" hidden></iframe>
+  
+  <div class="action-bar glass">
+    <button class="ghost block" id="btn-export-html" style="font-size: 13px;">Export Website (HTML)</button>
+    <button class="ghost block" id="btn-export-pdf" style="font-size: 13px;">Export PDF</button>
+    <button class="ghost block" id="btn-export-json" style="font-size: 13px;">Export JSON (for CV App)</button>
+  </div>
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>
