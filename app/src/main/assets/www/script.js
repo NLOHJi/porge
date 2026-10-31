@@ -95,22 +95,39 @@
     const title = c.data.personal.fullName || 'Portfolio';
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${css}</style></head><body style="background:#fff; margin:0;">${portfolioHtml(c)}</body></html>`;
   }
-
-  async function download(name, content, mime) {
-    if (navigator.share && navigator.canShare) {
-      try {
-        const file = new File([content], name, { type: mime });
-        if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
-      } catch (err) {}
-    }
+async function download(name, content, mime) {
+  // 1. If running in Android APK, use the Native Save Interface
+  if (window.AndroidDownload && window.AndroidDownload.saveFile) {
     try {
-      const blob = new Blob([content], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const win = window.open(url, '_blank');
-      if (!win) throw new Error('Popup blocked');
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-    } catch (e) { alert("Download failed."); }
+      // Convert string to Base64 to pass safely to Kotlin
+      const base64Data = btoa(unescape(encodeURIComponent(content)));
+      window.AndroidDownload.saveFile(name, mime, base64Data);
+      return;
+    } catch (e) {
+      console.error("Native save failed", e);
+    }
   }
+
+  // 2. Fallback for web browsers (testing)
+  if (navigator.share && navigator.canShare) {
+    try {
+      const file = new File([content], name, { type: mime });
+      if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
+    } catch (err) {}
+  }
+  
+  try {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  } catch (e) { alert("Download failed."); }
+}
 
   const safe = s => String(s||'portfolio').replace(/[^\w\-]+/g,'_').slice(0,60);
   let current = null, saveTimer = null;

@@ -11,12 +11,17 @@ import android.text.InputType
 import android.webkit.*
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
+import java.io.OutputStream
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
     private val fileChooserRequestCode = 100
+    
+    // Variables for saving files
+    private var pendingDownloadBytes: ByteArray? = null
+    private val saveFileRequestCode = 101
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,8 +32,12 @@ class MainActivity : AppCompatActivity() {
         webView.settings.domStorageEnabled = true
         webView.settings.allowFileAccess = true
         webView.settings.allowContentAccess = true
+        webView.settings.allowFileAccessFromFileURLs = true
+        webView.settings.allowUniversalAccessFromFileURLs = true
 
+        // Inject Print and Download interfaces
         webView.addJavascriptInterface(WebAppInterface(), "AndroidPrint")
+        webView.addJavascriptInterface(DownloadInterface(), "AndroidDownload")
 
         webView.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(
@@ -93,6 +102,24 @@ class MainActivity : AppCompatActivity() {
             filePathCallback = null
             return
         }
+        
+        // Handle the Save File result
+        if (requestCode == saveFileRequestCode && resultCode == RESULT_OK) {
+            val uri = data?.data
+            if (uri != null && pendingDownloadBytes != null) {
+                try {
+                    val outputStream: OutputStream? = contentResolver.openOutputStream(uri)
+                    outputStream?.write(pendingDownloadBytes!!)
+                    outputStream?.close()
+                    android.widget.Toast.makeText(this, "File Saved Successfully!", android.widget.Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    android.widget.Toast.makeText(this, "Failed to save file", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+            pendingDownloadBytes = null
+            return
+        }
+        
         super.onActivityResult(requestCode, resultCode, data)
     }
 
@@ -114,6 +141,26 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 printWebView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+            }
+        }
+    }
+
+    inner class DownloadInterface {
+        @JavascriptInterface
+        fun saveFile(filename: String, mimeType: String, base64Data: String) {
+            try {
+                // Decode base64 string back to bytes
+                pendingDownloadBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                
+                // Launch Android's native "Save As" dialog
+                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = mimeType
+                    putExtra(Intent.EXTRA_TITLE, filename)
+                }
+                startActivityForResult(intent, saveFileRequestCode)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
