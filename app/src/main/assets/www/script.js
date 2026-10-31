@@ -300,7 +300,7 @@
       if (!group.items.includes(val)) group.items.push(val);
       autoSave(); renderForm();
     });
-    customWrap.appendChild(cSelect); customWrap.appendChild(customInput || cInput); customWrap.appendChild(cBtn);
+    customWrap.appendChild(cSelect); customWrap.appendChild(cInput); customWrap.appendChild(cBtn);
     root.appendChild(customWrap);
   }
 
