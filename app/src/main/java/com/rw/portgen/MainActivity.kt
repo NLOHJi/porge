@@ -10,6 +10,7 @@ import android.print.PrintManager
 import android.text.InputType
 import android.webkit.*
 import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.io.OutputStream
 
@@ -111,9 +112,9 @@ class MainActivity : AppCompatActivity() {
                     val outputStream: OutputStream? = contentResolver.openOutputStream(uri)
                     outputStream?.write(pendingDownloadBytes!!)
                     outputStream?.close()
-                    android.widget.Toast.makeText(this, "File Saved Successfully!", android.widget.Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "File Saved Successfully!", Toast.LENGTH_SHORT).show()
                 } catch (e: Exception) {
-                    android.widget.Toast.makeText(this, "Failed to save file", android.widget.Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Failed to save file", Toast.LENGTH_SHORT).show()
                 }
             }
             pendingDownloadBytes = null
@@ -149,10 +150,7 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface
         fun saveFile(filename: String, mimeType: String, base64Data: String) {
             try {
-                // Decode base64 string back to bytes
                 pendingDownloadBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
-                
-                // Launch Android's native "Save As" dialog
                 val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
                     addCategory(Intent.CATEGORY_OPENABLE)
                     type = mimeType
