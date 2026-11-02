@@ -12,7 +12,10 @@
   };
 
   const blank = () => ({
-    personal: { fullName:'', headline:'', photo:'', email:'', phone:'', location:'', social:{ linkedin:'', github:'', website:'' } },
+    personal: { 
+      fullName:'', headline:'', photo:'', email:'', phone:'', location:'', 
+      social:{ website:'', instagram:'', twitter:'' } 
+    },
     about:'', skills:[], projects:[], experience:[], education:[], certifications:[], languages:[], references:[], hobbies:[]
   });
 
@@ -95,39 +98,22 @@
     const title = c.data.personal.fullName || 'Portfolio';
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${css}</style></head><body style="background:#fff; margin:0;">${portfolioHtml(c)}</body></html>`;
   }
-async function download(name, content, mime) {
-  // 1. If running in Android APK, use the Native Save Interface
-  if (window.AndroidDownload && window.AndroidDownload.saveFile) {
-    try {
-      // Convert string to Base64 to pass safely to Kotlin
-      const base64Data = btoa(unescape(encodeURIComponent(content)));
-      window.AndroidDownload.saveFile(name, mime, base64Data);
-      return;
-    } catch (e) {
-      console.error("Native save failed", e);
-    }
-  }
 
-  // 2. Fallback for web browsers (testing)
-  if (navigator.share && navigator.canShare) {
+  async function download(name, content, mime) {
+    if (navigator.share && navigator.canShare) {
+      try {
+        const file = new File([content], name, { type: mime });
+        if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
+      } catch (err) {}
+    }
     try {
-      const file = new File([content], name, { type: mime });
-      if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
-    } catch (err) {}
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, '_blank');
+      if (!win) throw new Error('Popup blocked');
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (e) { alert("Download failed."); }
   }
-  
-  try {
-    const blob = new Blob([content], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-  } catch (e) { alert("Download failed."); }
-}
 
   const safe = s => String(s||'portfolio').replace(/[^\w\-]+/g,'_').slice(0,60);
   let current = null, saveTimer = null;
@@ -200,13 +186,19 @@ async function download(name, content, mime) {
     root.appendChild(field('Headline', d.personal.headline, v => { d.personal.headline = v; autoSave(); }));
     root.appendChild(field('Email', d.personal.email, v => { d.personal.email = v; autoSave(); }));
     root.appendChild(field('Phone', d.personal.phone, v => { d.personal.phone = v; autoSave(); }));
-    root.appendChild(field('Location', d.personal.location, v => { d.personal.location = v; autoSave(); }));
+    root.appendChild(field('Location/Address', d.personal.location, v => { d.personal.location = v; autoSave(); }));
 
-    // 2. ABOUT
+    // 2. SOCIALS (UPDATED)
+    root.appendChild(sectionTitle('Social Links'));
+    root.appendChild(field('Website', d.personal.social.website, v => { d.personal.social.website = v; autoSave(); }));
+    root.appendChild(field('Instagram', d.personal.social.instagram, v => { d.personal.social.instagram = v; autoSave(); }));
+    root.appendChild(field('X (Twitter)', d.personal.social.twitter, v => { d.personal.social.twitter = v; autoSave(); }));
+
+    // 3. ABOUT
     root.appendChild(sectionTitle('About Me'));
     root.appendChild(field('Bio', d.about, v => { d.about = v; autoSave(); }, { area:true }));
 
-    // 3. EDUCATION (Multiple Entries)
+    // 4. EDUCATION
     root.appendChild(sectionTitle('Education'));
     d.education.forEach((e, i) => {
       root.appendChild(card([
@@ -217,30 +209,30 @@ async function download(name, content, mime) {
     });
     root.appendChild(addBtn('+ Add Education', () => { d.education.push({ degree:'', school:'', period:'' }); autoSave(); renderForm(); }));
 
-    // 4. EXPERIENCE (Multiple Entries)
+    // 5. EXPERIENCE
     root.appendChild(sectionTitle('Work Experience'));
     d.experience.forEach((e, i) => {
       root.appendChild(card([
         field('Job Title', e.role, v => { e.role = v; autoSave(); }),
-        field('Company', e.company, v => { e.company = v; autoSave(); }),
+        field('Company / Place', e.company, v => { e.company = v; autoSave(); }),
         field('Period (e.g. 2023 - Present)', e.period, v => { e.period = v; autoSave(); }),
         field('Description / Tasks', e.description, v => { e.description = v; autoSave(); }, { area:true })
       ], () => { d.experience.splice(i,1); autoSave(); renderForm(); }));
     });
     root.appendChild(addBtn('+ Add Experience', () => { d.experience.push({ role:'', company:'', period:'', description:'' }); autoSave(); renderForm(); }));
 
-    // 5. CERTIFICATIONS (Multiple Entries)
+    // 6. CERTIFICATIONS
     root.appendChild(sectionTitle('Certifications'));
     d.certifications.forEach((c, i) => {
       root.appendChild(card([
         field('Certification Name', c.name, v => { c.name = v; autoSave(); }),
-        field('Issuer (e.g. Coursera)', c.issuer, v => { c.issuer = v; autoSave(); }),
+        field('Issuer', c.issuer, v => { c.issuer = v; autoSave(); }),
         field('Year', c.year, v => { c.year = v; autoSave(); })
       ], () => { d.certifications.splice(i,1); autoSave(); renderForm(); }));
     });
     root.appendChild(addBtn('+ Add Certification', () => { d.certifications.push({ name:'', issuer:'', year:'' }); autoSave(); renderForm(); }));
 
-    // 6. PROJECTS (Multiple Entries with File Upload)
+    // 7. PROJECTS
     root.appendChild(sectionTitle('Projects'));
     d.projects.forEach((p, i) => {
       root.appendChild(card([
@@ -270,19 +262,20 @@ async function download(name, content, mime) {
     });
     root.appendChild(addBtn('+ Add Project', () => { d.projects.push({ title:'', description:'', link:'', image:'', fileData:null, fileName:null }); autoSave(); renderForm(); }));
 
-    // 7. SKILLS (Tags)
+    // 8. SKILLS
     root.appendChild(sectionTitle('Skills'));
     d.skills.forEach((g, i) => {
       const container = document.createElement('div');
-      const catTitle = document.createElement('div'); catTitle.className = 'skill-cat-title'; catTitle.textContent = g.category; 
+      const catTitle = document.createElement('div'); catTitle.style.cssText = 'font-weight: bold; font-size: 13px; margin-bottom: 8px; color: var(--accent);'; catTitle.textContent = g.category; 
       container.appendChild(catTitle);
       
-      const tagsDiv = document.createElement('div'); tagsDiv.className = 'skill-tags';
+      const tagsDiv = document.createElement('div'); tagsDiv.style.cssText = 'display: flex; flex-wrap: wrap; gap: 8px;';
       const predefined = SKILLS_DATA[g.category] || [];
       
       predefined.forEach(skill => {
         const tag = document.createElement('div'); tag.className = 'skill-tag'; tag.textContent = skill;
-        if (g.items.includes(skill)) tag.classList.add('selected');
+        tag.style.cssText = 'background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid var(--border-color);';
+        if (g.items.includes(skill)) { tag.style.background = 'var(--btn-primary)'; tag.style.color = 'white'; tag.style.borderColor = 'var(--btn-primary)'; }
         tag.addEventListener('click', () => {
           if (g.items.includes(skill)) g.items = g.items.filter(x => x !== skill);
           else g.items.push(skill);
@@ -293,7 +286,8 @@ async function download(name, content, mime) {
       
       g.items.forEach(skill => {
         if (!predefined.includes(skill)) {
-          const tag = document.createElement('div'); tag.className = 'skill-tag selected'; tag.textContent = skill + ' ✕';
+          const tag = document.createElement('div'); tag.textContent = skill + ' ✕';
+          tag.style.cssText = 'background: var(--btn-primary); color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;';
           tag.addEventListener('click', () => { g.items = g.items.filter(x => x !== skill); autoSave(); renderForm(); });
           tagsDiv.appendChild(tag);
         }
@@ -303,8 +297,7 @@ async function download(name, content, mime) {
       root.appendChild(container);
     });
     
-    // Add custom skill UI
-    const customWrap = document.createElement('div'); customWrap.style.display = 'flex'; customWrap.style.gap = '5px'; customWrap.style.marginTop = '10px';
+    const customWrap = document.createElement('div'); customWrap.style.cssText = 'display: flex; gap: 5px; margin-top: 10px;';
     const cSelect = document.createElement('select'); cSelect.style.flex = '1';
     Object.keys(SKILLS_DATA).forEach(cat => { const o = document.createElement('option'); o.value = cat; o.textContent = cat; cSelect.appendChild(o); });
     const cInput = document.createElement('input'); cInput.type = 'text'; cInput.placeholder = 'New skill...'; cInput.style.flex = '2';
@@ -321,13 +314,11 @@ async function download(name, content, mime) {
     root.appendChild(customWrap);
   }
 
-  // THEME
   const btnTheme = $('btn-theme');
   function applyTheme(isLight) { document.body.classList.toggle('light', isLight); btnTheme.textContent = isLight ? '🌙' : '☀️'; }
   applyTheme(localStorage.getItem('pfgen_lightMode') === 'true');
   btnTheme.addEventListener('click', () => { const isLight = !document.body.classList.contains('light'); applyTheme(isLight); localStorage.setItem('pfgen_lightMode', isLight); });
 
-  // EVENTS
   $('new-client').addEventListener('click', () => { const name = prompt('Client name:'); if (name === null) return; openClient(Store.create(name.trim() || 'Untitled').id); });
   document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
   document.querySelectorAll('[data-home]').forEach(b => b.addEventListener('click', () => { if (current) Store.save(current); refreshList(); show('screen-home'); }));
